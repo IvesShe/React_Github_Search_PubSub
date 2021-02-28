@@ -1,4 +1,4 @@
-# React Github Search PubSub 使用消息訂閱發佈的機制
+# React Github Search PubSub 使用消息訂閱、補充Fetch、async、await
 
 優化此專案
 
