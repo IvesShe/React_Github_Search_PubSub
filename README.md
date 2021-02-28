@@ -247,3 +247,109 @@ export default class List extends Component {
   
 ```
 
+# Fetch補充
+
+## Fetch特點
+
+1. fetch:原生函數，不再使用XmlHttpRequest對象提交ajax請求
+2. 老版本瀏覽器可能不支持
+
+## 原使用的axiox的XHR請求
+
+```js
+// 發送網絡請求
+axios.get(`https://api.github.com/search/users?q=${keyWord}`).then(
+    response => {
+        // 請求成功後通知List更新狀態
+        //this.props.updateAppState({isLoading:false,users:response.data.items});
+        console.log('Search組件發佈消息了');
+        PubSub.publish('update',{isLoading:false,users:response.data.items});
+        console.log('成功了',response.data);
+    },
+    error => {
+        // 請求失敗後通知App更新狀態
+        //this.props.updateAppState({isLoading:false,err:error})
+        console.log('Search組件發佈消息了');
+        PubSub.publish('update',{isLoading:false,err:error});
+        console.log('失敗了',error);
+    }
+)
+```
+
+## 可以改用Fetch請求
+
+error的部分，這邊演示了兩種方式，一種是各別判斷error(註解的區塊)，另一種是統一處理error
+
+```js
+// 發送網路請求--使用fetch發送
+fetch(`https://api.github.com/search/users?q=${keyWord}`).then(
+    // 會先連接服務器
+    response => {
+        console.log('連接服務器成功了');
+        // 回傳獲取到的數據
+        return response.json();
+    },
+    // error => {
+    //     console.log('連接服務器失敗了', error);
+    //     console.log('Search組件發佈消息了');
+    //     PubSub.publish('update', { isLoading: false, err: error });
+    //     console.log('失敗了', error);
+    //     // 回傳初始化狀態的Promise實例，使程序到此終止不再往下跑後續的then
+    //     // 回傳非Promise的話會再往下跑then
+    //     return new Promise(() => { })
+    // }
+).then(
+    // 這邊會獲取數據，接到空的Promise函數代表失敗了
+    response => {
+        console.log('獲取數據成功了', response);
+        console.log('Search組件發佈消息了');
+        const data = response;
+        PubSub.publish('update', { isLoading: false, users: data.items });
+        console.log('成功了', data);
+    },
+    // error => {
+    //     console.log('獲取數據失敗了', error);
+    //     console.log('Search組件發佈消息了');
+    //     PubSub.publish('update', { isLoading: false, err: error });
+    //     console.log('失敗了', error);
+    // }
+).catch(
+    // 統一處理error
+    (error)=>{
+        console.log('Search組件發佈消息了');
+        PubSub.publish('update', { isLoading: false, err: error });
+        console.log('失敗了', error);
+    }
+)
+```
+
+## 上面的代碼，可以使用await改寫
+
+```js
+// 發送網路請求--使用fetch發送(優化)
+try {
+    console.log('使用async、await、fetch獲取數據了');
+    const response = await fetch(`https://api.github.com/search/users?q=${keyWord}`)
+    const data = await response.json()
+    console.log('Search組件發佈消息了');
+    PubSub.publish('update', { isLoading: false, users: data.items });
+    console.log('成功了', data);
+} catch (error) {
+    console.log('Search組件發佈消息了');
+    PubSub.publish('update', { isLoading: false, err: error });
+    console.log('失敗了', error);
+}
+```
+
+使用await需要搭配async，所以這邊要加關鍵字
+
+```js
+search = async()=>{
+```
+
+## Fetch參考文檔 
+
+https://github.github.io/fetch/
+
+https://segmentfault.com/a/1190000003810652
+
